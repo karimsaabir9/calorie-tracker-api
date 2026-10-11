@@ -82,22 +82,59 @@ All routes except `/api/auth/register` and `/api/auth/login` require an `Authori
 | POST   | `/login`    | Log in and receive a JWT      |
 | GET    | `/me`       | Get the current user's profile |
 
+**Register**
+```json
+POST /api/auth/register
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "Jane Doe",
+  "dailyCalorieGoal": 2000   // optional, defaults to 2000
+}
+```
+Response includes the created user plus a JWT: `{ "message": "...", "user": { "email", "name", "dailyCalorieGoal", "token" } }`.
+
+**Login** returns the same shape as register on success.
+
 ### Food — `/api/food`
 
-| Method | Endpoint   | Description                                              |
-| ------ | ---------- | ---------------------------------------------------------- |
-| POST   | `/scan`    | Upload a food image (`multipart/form-data`, field `image`) |
-| POST   | `/analyze` | Upload and analyze a food image for nutrition info          |
-| POST   | `/save`    | Save an analyzed food entry to the user's log               |
-| POST   | `/discard` | Discard an analyzed entry without saving it                 |
+| Method | Endpoint   | Description                                                          |
+| ------ | ---------- | ---------------------------------------------------------------------- |
+| POST   | `/scan`    | Upload a food image, analyze it, and save the entry in one step        |
+| POST   | `/analyze` | Upload and analyze a food image without saving — for user confirmation |
+| POST   | `/save`    | Persist a previously analyzed entry the user confirmed                 |
+| POST   | `/discard` | Delete an analyzed-but-unconfirmed image from R2                       |
+
+`/scan` and `/analyze` both take `multipart/form-data` with an `image` field. The difference is the workflow:
+- **`/scan`** is the one-shot path: image in, nutrition analyzed, entry saved to the log, saved `FoodEntry` returned.
+- **`/analyze` → `/save` or `/discard`** is the review-first path: `/analyze` uploads the image and returns the AI analysis (`foodName`, `calories`, `protein`, `carbs`, `fat`, `mealType`, `imageUrl`, `storageKey`, and a base64 preview) without touching the database. The client then either calls `/save` with that data to commit it, or `/discard` with just the `storageKey` to delete the now-unused image from R2.
 
 ### Reports — `/api/reports`
 
-| Method | Endpoint   | Description               |
-| ------ | ---------- | -------------------------- |
-| GET    | `/daily`   | Nutrition totals for a day |
-| GET    | `/weekly`  | Nutrition totals for a week |
-| GET    | `/monthly` | Nutrition totals for a month |
+| Method | Endpoint             | Description                                  |
+| ------ | --------------------- | ----------------------------------------------- |
+| GET    | `/daily?date=`        | Totals, macros, and meal breakdown for a day (defaults to today) |
+| GET    | `/weekly`              | Last 7 days, day-by-day, with totals and averages |
+| GET    | `/monthly?year=&month=` | Full month totals, daily chart data, and the highest-calorie day (defaults to current month) |
+
+## Image Processing
+
+Every uploaded photo is optimized with Sharp before it's stored or analyzed:
+- Auto-rotated based on EXIF orientation
+- Resized to fit within 1024×1024 (aspect ratio preserved, never upscaled)
+- Re-encoded as JPEG at 85% quality with mozjpeg compression
+- Uploaded to R2 under the `colorie-tracker-api/<random-hex>.jpeg` key
+
+## Macro Calculations
+
+Reports convert macro grams to calories using standard conversions, then derive each macro's share of total macro calories:
+- Protein: 4 kcal/g
+- Carbohydrates: 4 kcal/g
+- Fat: 9 kcal/g
+
+## Error Handling
+
+Standard HTTP status codes are used throughout: `200` success, `201` created, `400` bad request, `401` unauthorized, `404` not found, `500` internal server error — each with a JSON `{ "message": "..." }` body.
 
 ## Data Models
 
