@@ -1,24 +1,36 @@
 import mongoose from "mongoose";
 import { config } from "./config.js";
 
-const connectDB = async (): Promise<void> => {
-  try {
+let connectionPromise: Promise<typeof mongoose> | null = null;
+
+const connectDB = (): Promise<typeof mongoose> => {
+  if (mongoose.connection.readyState === 1) {
+    return Promise.resolve(mongoose);
+  }
+
+  if (!connectionPromise) {
     const mongoURI = config.mongodbUri;
 
     if (!mongoURI) {
-      throw new Error(
-        "MongoDB URI is not defined in the environment variables"
+      return Promise.reject(
+        new Error("MongoDB URI is not defined in the environment variables")
       );
     }
 
-    const conn = await mongoose.connect(mongoURI);
-    console.log(`Connected to MongoDB: ${conn.connection.host}`);
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-    console.error("Error connecting to MongoDB:", errorMessage);
+    connectionPromise = mongoose
+      .connect(mongoURI)
+      .then((conn) => {
+        console.log(`Connected to MongoDB: ${conn.connection.host}`);
+        return conn;
+      })
+      .catch((error) => {
+        // allow the next request to retry instead of staying stuck on a failed connection
+        connectionPromise = null;
+        throw error;
+      });
   }
-};
 
+  return connectionPromise;
+};
 
 export default connectDB;
