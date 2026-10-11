@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import express, { Request, Response, NextFunction} from "express";
 import connectDB from "./config/db.js";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import foodRoutes from "./routes/food.js";
@@ -8,31 +8,43 @@ import reportsRoutes from "./routes/reports.js";
 
 dotenv.config();
 
+import { config } from "./config/config.js";
 const app = express();
+
 connectDB();
 
-app.use(cors())
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Api routes
-app.use("/api/auth", authRoutes)
-app.use("/api/food", foodRoutes)
-app.use("/api/reports", reportsRoutes)
+// API routes
+
+app.use("/api/auth", authRoutes);
+app.use("/api/food", foodRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.get("/", (req: Request, res: Response) => {
-    res.json({
-        message: "Welcome to colorie tracker API",
-        version: "1.0.0",
-        status: "success",
-        timestamp: new Date().toISOString()
-    });
+  res.json({
+    message: "Welcome to colorie trucker API",
+    version: "1.0.0",
+    status: "success",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-const PORT = process.env.PORT || 8000;
+// error handling middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Internal server error" });
+});
+
+// 404 middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+const PORT = config.port;
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
-
-export default app;
