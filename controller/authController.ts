@@ -102,3 +102,33 @@ export const me = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const { name, dailyColorieGoal, onboardingCompleted } = req.body;
+
+      const user = await User.findById(req.user?._id).select("-password");
+
+      if(!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      if(name) user.name = name;
+      if(dailyColorieGoal) user.dailyCalorieGoal = dailyColorieGoal;
+      if(onboardingCompleted !== undefined) user.onBoardingCompleted = onboardingCompleted;
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        dailyCalorieGoal: updatedUser.dailyCalorieGoal,
+        onboardingCompleted: updatedUser.onBoardingCompleted,
+      });
+  } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+}
