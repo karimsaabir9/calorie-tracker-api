@@ -116,7 +116,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 
       if(name) user.name = name;
       if(dailyColorieGoal) user.dailyCalorieGoal = dailyColorieGoal;
-      if(onboardingCompleted !== undefined) user.onBoardingCompleted = onboardingCompleted;
+      if(onboardingCompleted !== undefined) user.onboardingCompleted = onboardingCompleted;
 
       const updatedUser = await user.save();
 
@@ -125,7 +125,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         name: updatedUser.name,
         email: updatedUser.email,
         dailyCalorieGoal: updatedUser.dailyCalorieGoal,
-        onboardingCompleted: updatedUser.onBoardingCompleted,
+        onboardingCompleted: updatedUser.onboardingCompleted,
       });
   } catch (error) {
       console.error("Error updating profile:", error);

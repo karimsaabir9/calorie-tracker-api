@@ -138,7 +138,7 @@ Standard HTTP status codes are used throughout: `200` success, `201` created, `4
 
 ## Data Models
 
-**User** — `email`, `password` (hashed), `name`, `dailyCalorieGoal` (default 2000), `onBoardingCompleted`, `createdAt`.
+**User** — `email`, `password` (hashed), `name`, `dailyCalorieGoal` (default 2000), `onboardingCompleted`, `createdAt`.
 
 **FoodEntry** — `userId`, `foodName`, `calories`, `protein`, `carbs`, `fat`, `imageUrl`, `storageKey` (R2 object key), `timestamp`, `mealType` (`breakfast` | `lunch` | `dinner` | `snack`).
 

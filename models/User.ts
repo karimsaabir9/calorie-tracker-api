@@ -7,7 +7,7 @@ export interface IUser extends Document {
   password: string;
   name: string;
   dailyCalorieGoal: number;
-  onBoardingCompleted: boolean;
+  onboardingCompleted: boolean;
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -36,7 +36,7 @@ const userSchema = new Schema<IUser>({
     type: Number,
     default: 2000,
   },
-  onBoardingCompleted: {
+  onboardingCompleted: {
     type: Boolean,
     default: false,
   },
